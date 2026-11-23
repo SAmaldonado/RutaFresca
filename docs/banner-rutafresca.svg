@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1200" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E282D"/>
+      <stop offset="65%" stop-color="#263238"/>
+      <stop offset="100%" stop-color="#1F3B2B"/>
+    </linearGradient>
+    <linearGradient id="greenAccent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3A9D4A"/>
+      <stop offset="100%" stop-color="#2E7D3B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="320" rx="20" fill="url(#bgGrad)"/>
+
+  <!-- Subtle topographic / corridor route lines on right -->
+  <g opacity="0.14">
+    <path d="M760 40 C860 95, 920 65, 1020 130 C1090 175, 1130 160, 1190 210" stroke="#F4B400" stroke-width="3" stroke-dasharray="10 8" fill="none"/>
+    <path d="M790 270 C890 220, 960 240, 1050 185 C1110 150, 1150 165, 1200 130" stroke="#3A9D4A" stroke-width="2.5" stroke-dasharray="8 8" fill="none"/>
+    <circle cx="885" cy="86" r="6" fill="#3A9D4A"/>
+    <circle cx="1020" cy="130" r="6" fill="#3A9D4A"/>
+    <circle cx="1050" cy="185" r="8" fill="#F4B400"/>
+  </g>
+
+  <!-- Pin + Sprout Brand Mark -->
+  <g transform="translate(64, 54)">
+    <path d="M44 6C25.77 6 11 20.77 11 39C11 61.69 44 82 44 82C44 82 77 61.69 77 39C77 20.77 62.23 6 44 6Z" fill="url(#greenAccent)"/>
+    <path d="M44 60V36" stroke="#FFFFFF" stroke-width="4.4" stroke-linecap="round"/>
+    <path d="M44 41C33 40.3 26.8 32.1 28.8 22.5C37.8 23.2 44 30 44 41Z" fill="#FFFFFF"/>
+    <path d="M44 38.2C55 37.5 61.2 29.3 59.2 19.7C50.2 20.4 44 27.2 44 38.2Z" fill="#F4B400"/>
+  </g>
+
+  <!-- Wordmark RutaFresca -->
+  <text x="164" y="106" font-family="Poppins, 'Segoe UI', Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-0.8">
+    <tspan fill="#FFFFFF">Ruta</tspan><tspan fill="#3A9D4A">Fresca</tspan>
+  </text>
+
+  <!-- Dotted Corn-Yellow Route Underline -->
+  <line x1="166" y1="120" x2="404" y2="120" stroke="#F4B400" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 11"/>
+
+  <!-- Main Headline -->
+  <text x="68" y="182" font-family="Poppins, 'Segoe UI', Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF">
+    Del campo a la cocina, con pedidos confirmados.
+  </text>
+
+  <!-- Official Slogan -->
+  <text x="68" y="218" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="18" font-weight="500" fill="#CFD8DC">
+    «Se cosecha lo que usted ya pidió.»  ·  Cundinamarca y Boyacá → Bogotá
+  </text>
+
+  <!-- Bottom Feature Pills -->
+  <g transform="translate(68, 248)" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="12.5" font-weight="600">
+    <rect x="0" y="0" width="218" height="32" rx="16" fill="#3A9D4A" fill-opacity="0.22" stroke="#3A9D4A" stroke-opacity="0.6"/>
+    <text x="16" y="20" fill="#B9F6CA">Marketplace B2B Asset-Light</text>
+
+    <rect x="230" y="0" width="214" height="32" rx="16" fill="#F4B400" fill-opacity="0.18" stroke="#F4B400" stroke-opacity="0.6"/>
+    <text x="246" y="20" fill="#FFE082">WhatsApp + Voz + Offline PWA</text>
+
+    <rect x="456" y="0" width="210" height="32" rx="16" fill="#FFFFFF" fill-opacity="0.09" stroke="#FFFFFF" stroke-opacity="0.25"/>
+    <text x="472" y="20" fill="#ECEFF1">Rutas VRP · Margen por Kilo</text>
+
+    <rect x="678" y="0" width="216" height="32" rx="16" fill="#3A9D4A" fill-opacity="0.22" stroke="#3A9D4A" stroke-opacity="0.6"/>
+    <text x="694" y="20" fill="#B9F6CA">Ley 2046 · Ley 1581 · Ley 527</text>
+  </g>
+</svg>

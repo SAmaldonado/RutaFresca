@@ -1,0 +1,18 @@
+{
+  "name": "Ruta Fresca — Del campo a la cocina",
+  "short_name": "RutaFresca",
+  "description": "Se cosecha lo que usted ya pidió. Plataforma B2B de cosecha programada contra pedido, rutas compartidas y trazabilidad campesina.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F2F5F0",
+  "theme_color": "#3A9D4A",
+  "lang": "es-CO",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,559 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String          @id @default(cuid())
+  fullName         String
+  email            String          @unique
+  phone            String          @unique
+  role             String          // BUYER | PRODUCER | ASSOCIATION_LEADER | TRANSPORTER | ACOPIO_OPERATOR | ADMIN_OPS
+  passwordHash     String
+  preferredChannel String          @default("WEB") // WEB | WHATSAPP_TEXT | WHATSAPP_AUDIO | PHONE_CALL | ACOPIO_PAPER
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+
+  consents         ConsentRecord[]
+  buyerOrg         BuyerOrg?
+  producer         Producer?
+  transporter      Transporter?
+}
+
+model ConsentRecord {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purposeVersion     String    @default("LEY1581-v1.0-2026")
+  purposeSummary     String
+  accepted           Boolean
+  readAloudByGestor  Boolean   @default(false)
+  captureChannel     String    // WEB | WHATSAPP_AUDIO | ACOPIO_PAPER | PHONE_CALL
+  evidenceNote       String?
+  evidenceAudioData  String?
+  signatureRef       String?
+  grantedAt          DateTime  @default(now())
+  revokedAt          DateTime?
+}
+
+model Zone {
+  id             String         @id @default(cuid())
+  code           String         @unique
+  name           String
+  type           String         // URBAN_DELIVERY | RURAL_PRODUCTION
+  department     String         // Bogotá D.C. | Cundinamarca | Boyacá
+  municipality   String
+  climateProfile String         // ALTIPLANO_FRIO | SABANA_TEMPLADO | ORIENTE_HUMEDO | URBANO_BOGOTA
+  lat            Float
+  lng            Float
+  isPilotActive  Boolean        @default(true)
+
+  buyerOrgs      BuyerOrg[]
+  associations   Association[]
+  producers      Producer[]
+  weatherAlerts  WeatherAlert[]
+  assignments    HarvestAssignment[]
+  lots           Lot[]
+  incidents      Incident[]
+}
+
+model BuyerOrg {
+  id                  String                @id @default(cuid())
+  code                String                @unique
+  userId              String                @unique
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String
+  segment             String                // COMEDOR_EMPRESARIAL | UNIVERSIDAD | COLEGIO_PRIVADO | RESTAURANTE_MEDIANO | OPERADOR_PUBLICO_LEY_2046
+  zoneId              String
+  zone                Zone                  @relation(fields: [zoneId], references: [id])
+  address             String
+  lat                 Float
+  lng                 Float
+  dailyMealsRange     String                // 50-99 | 100-249 | 250-499 | 500+
+  deliveryWindowStart String                @default("06:00")
+  deliveryWindowEnd   String                @default("08:00")
+  pricingMode         String                @default("PILOT_0_PCT") // PILOT_0_PCT | COMMISSION_PCT | HYBRID_SUBSCRIPTION
+  commissionRate      Float                 @default(0.0)
+  subscriptionFeeCop  Int                   @default(0)
+  pilotStartDate      DateTime              @default(now())
+  referralCode        String                @unique
+  referredByCode      String?
+  status              String                @default("ACTIVE") // LEAD | LETTER_OF_INTENT | ACTIVE | CHURNED
+  createdAt           DateTime              @default(now())
+
+  substituteRules     BuyerSubstituteRule[]
+  orders              WeeklyOrder[]
+  incidents           Incident[]
+}
+
+model Association {
+  id                  String            @id @default(cuid())
+  code                String            @unique
+  name                String
+  zoneId              String
+  zone                Zone              @relation(fields: [zoneId], references: [id])
+  municipality        String
+  memberCount         Int
+  hasFinagroInsurance Boolean           @default(false)
+  insuranceType       String            @default("NONE") // NONE | ISA_SUBSIDIZED | PARAMETRIC
+  digitalLeaderName   String
+  hasSatelliteWifi    Boolean           @default(false)
+  contactPhone        String
+  createdAt           DateTime          @default(now())
+
+  collectionPoints    CollectionPoint[]
+  producers           Producer[]
+  assignments         HarvestAssignment[]
+  lots                Lot[]
+}
+
+model CollectionPoint {
+  id               String              @id @default(cuid())
+  code             String              @unique
+  associationId    String
+  association      Association         @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  name             String
+  veredaAddress    String
+  lat              Float
+  lng              Float
+  connectivityType String              // SATELLITE_WIFI | MOBILE_4G | OFFLINE_SYNC
+  operatingDays    String              // Martes y Viernes
+
+  assignments      HarvestAssignment[]
+  lots             Lot[]
+}
+
+model Producer {
+  id                 String              @id @default(cuid())
+  uniqueCode         String              @unique
+  userId             String              @unique
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  associationId      String?
+  association        Association?        @relation(fields: [associationId], references: [id])
+  zoneId             String
+  zone               Zone                @relation(fields: [zoneId], references: [id])
+  farmName           String
+  vereda             String
+  hectares           Float
+  paymentTerm        String              @default("MAX_8_DAYS") // CONTADO_MISMO_DIA | DAYS_1_3 | MAX_8_DAYS
+  fulfillmentScore   Float               @default(95.0)
+  // Línea base digital del productor (evita sesgo de exclusión digital)
+  hasPhone           Boolean             @default(true)
+  isSmartphone       Boolean             @default(true)
+  hasMobileData      Boolean             @default(true)
+  hasFarmSignal      Boolean             @default(true)
+  usesWhatsapp       Boolean             @default(true)
+  phoneHandlerInHome String              @default("Titular")
+  primaryChannel     String              @default("WHATSAPP_AUDIO") // WHATSAPP_TEXT | WHATSAPP_AUDIO | PHONE_CALL | ACOPIO_PAPER | WEB
+  createdAt          DateTime            @default(now())
+
+  sowingDeclarations SowingDeclaration[]
+  assignments        HarvestAssignment[]
+  lots               Lot[]
+  incidents          Incident[]
+}
+
+model Transporter {
+  id                   String   @id @default(cuid())
+  code                 String   @unique
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType          String   // CAMIONETA | FURGON_PEQUENO | CAMION_LIVIANO | CAMION_MEDIANO_GRANDE
+  capacityKg           Int
+  plateNumber          String   @unique
+  operatingDepartments String   // Cundinamarca,Boyacá
+  acceptsSharedRoutes  String   @default("CONDITIONAL") // YES | CONDITIONAL | NO
+  maxDetourKm          Float    @default(18.0)
+  preferredTariffModel String   @default("BASE_PLUS_KM") // BASE_PLUS_KM | PER_KM | PER_KG | FIXED_ROUTE
+  baseRateCop          Int      @default(120000)
+  perKmRateCop         Int      @default(2100)
+  perKgRateCop         Int      @default(260)
+  fixedRouteRateCop    Int      @default(280000)
+  waitingFeePerHourCop Int      @default(35000)
+  cancellationCompPct  Float    @default(0.35)
+  homeLat              Float
+  homeLng              Float
+  createdAt            DateTime @default(now())
+
+  routes               Route[]
+}
+
+model Product {
+  id                      String                @id @default(cuid())
+  sku                     String                @unique
+  name                    String
+  category                String                // VERDURA | FRUTA | TUBERCULO | HORTALIZA
+  iconKey                 String                // lettuce | carrot | tomato | potato | onion | spinach | cabbage | strawberry | blackberry | peas | lulo | mango
+  unit                    String                @default("KG")
+  supportsFunctionalQuality Boolean             @default(true)
+  functionalDiscountPct   Float                 @default(0.20)
+  perishabilityDays       Int                   @default(5)
+  active                  Boolean               @default(true)
+
+  cyclePrices             CyclePrice[]
+  primarySubstitutes      BuyerSubstituteRule[] @relation("PrimaryProduct")
+  altSubstitutes          BuyerSubstituteRule[] @relation("SubstituteProduct")
+  sowingDeclarations      SowingDeclaration[]
+  orderItems              OrderItem[]
+  assignments             HarvestAssignment[]
+  lots                    Lot[]
+  incidents               Incident[]            @relation("IncidentProduct")
+  substituteIncidents     Incident[]            @relation("IncidentSubstitute")
+  backupPurchases         BackupPurchase[]
+  marketFeeds             ExternalMarketFeed[]
+}
+
+model PriceCycle {
+  id          String        @id @default(cuid())
+  code        String        @unique
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  ipcFoodPct  Float         @default(7.31)
+  isActive    Boolean       @default(true)
+
+  cyclePrices CyclePrice[]
+  orders      WeeklyOrder[]
+}
+
+model CyclePrice {
+  id                     String     @id @default(cuid())
+  priceCycleId           String
+  priceCycle             PriceCycle @relation(fields: [priceCycleId], references: [id], onDelete: Cascade)
+  productId              String
+  product                Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sipsaRefPriceCop       Int
+  agreedBuyerPriceCop    Int
+  agreedProducerPriceCop Int
+  functionalBuyerPriceCop Int
+  bandMinCop             Int
+  bandMaxCop             Int
+
+  @@unique([priceCycleId, productId])
+}
+
+model BuyerSubstituteRule {
+  id                    String   @id @default(cuid())
+  buyerOrgId            String
+  buyerOrg              BuyerOrg @relation(fields: [buyerOrgId], references: [id], onDelete: Cascade)
+  primaryProductId      String
+  primaryProduct        Product  @relation("PrimaryProduct", fields: [primaryProductId], references: [id])
+  substituteProductId   String
+  substituteProduct     Product  @relation("SubstituteProduct", fields: [substituteProductId], references: [id])
+  priorityOrder         Int      @default(1)
+  autoApproveIfShortage Boolean  @default(true)
+  notes                 String?
+
+  @@unique([buyerOrgId, primaryProductId, substituteProductId])
+}
+
+model SowingDeclaration {
+  id                    String   @id @default(cuid())
+  producerId            String
+  producer              Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  productId             String
+  product               Product  @relation(fields: [productId], references: [id])
+  sowingDate            DateTime
+  estimatedHarvestStart DateTime
+  estimatedHarvestEnd   DateTime
+  estimatedKg           Float
+  staggeredBatchNumber  Int      @default(1)
+  captureChannel        String   @default("ACOPIO_TABLET")
+  capturedByUserId      String?
+  notes                 String?
+  createdAt             DateTime @default(now())
+}
+
+model WeeklyOrder {
+  id                   String           @id @default(cuid())
+  orderCode            String           @unique
+  buyerOrgId           String
+  buyerOrg             BuyerOrg         @relation(fields: [buyerOrgId], references: [id], onDelete: Cascade)
+  priceCycleId         String
+  priceCycle           PriceCycle       @relation(fields: [priceCycleId], references: [id])
+  deliveryWeek         String           // 2026-W48
+  deliveryDate         DateTime
+  commitmentType       String           @default("PARTIAL") // FULL | PARTIAL
+  cutoffAt             DateTime
+  adjustmentDeadlineAt DateTime
+  status               String           @default("PARTIAL_CONFIRMED") // DRAFT | PARTIAL_CONFIRMED | LOCKED | ASSIGNED | IN_TRANSIT | DELIVERED | COMPLETED_WITH_INCIDENT | CANCELLED
+  captureChannel       String           @default("WEB")
+  capturedByUserId     String?
+  notes                String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  items                OrderItem[]
+  lots                 Lot[]
+  deliveryReceipt      DeliveryReceipt?
+  incidents            Incident[]
+}
+
+model OrderItem {
+  id            String              @id @default(cuid())
+  weeklyOrderId String
+  weeklyOrder   WeeklyOrder         @relation(fields: [weeklyOrderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product             @relation(fields: [productId], references: [id])
+  qualityGrade  String              @default("STANDARD") // STANDARD | FUNCTIONAL
+  requestedKg   Float
+  adjustedKg    Float
+  deliveredKg   Float               @default(0)
+  unitPriceCop  Int
+
+  assignments   HarvestAssignment[]
+  incidents     Incident[]
+}
+
+model HarvestAssignment {
+  id                    String          @id @default(cuid())
+  assignmentCode        String          @unique
+  orderItemId           String?
+  orderItem             OrderItem?      @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  productId             String
+  product               Product         @relation(fields: [productId], references: [id])
+  producerId            String
+  producer              Producer        @relation(fields: [producerId], references: [id])
+  associationId         String?
+  association           Association?    @relation(fields: [associationId], references: [id])
+  zoneId                String
+  zone                  Zone            @relation(fields: [zoneId], references: [id])
+  collectionPointId     String
+  collectionPoint       CollectionPoint @relation(fields: [collectionPointId], references: [id])
+  deliveryWeek          String
+  assignedKg            Float
+  producerPricePerKgCop Int
+  pickupDatetime        DateTime
+  paymentDueDate        DateTime
+  status                String          @default("SENT") // SENT | CONFIRMED | REJECTED_CAPACITY | WEIGHED | CANCELLED_CLIMATE | CANCELLED_OTHER
+  rejectionReason       String?
+  confirmedAt           DateTime?
+  captureChannel        String          @default("WHATSAPP_AUDIO")
+  capturedByUserId      String?
+  boletaPrintedAt       DateTime?
+  createdAt             DateTime        @default(now())
+
+  lot                   Lot?
+}
+
+model MessageEvidence {
+  id                String   @id @default(cuid())
+  entityType        String   // HARVEST_ASSIGNMENT | WEEKLY_ORDER | ROUTE | CONSENT
+  entityId          String
+  direction         String   // OUTBOUND | INBOUND
+  channel           String   // WHATSAPP_TEXT | WHATSAPP_AUDIO | WEB | PHONE_CALL | ACOPIO_PAPER
+  senderPhone       String
+  recipientPhone    String
+  messageBody       String
+  audioDataUrl      String?
+  audioTranscript   String?
+  actionClicked     String?  // SI_CUMPLO | NO_ALCANZO | ACEPTO_RUTA | CONFIRMO_PEDIDO
+  contentSha256Hash String   // Evidencia jurídica Ley 527 de 1999
+  createdAt         DateTime @default(now())
+}
+
+model Lot {
+  id                   String            @id @default(cuid())
+  lotCode              String            @unique
+  qrPayload            String
+  harvestAssignmentId  String?           @unique
+  harvestAssignment    HarvestAssignment? @relation(fields: [harvestAssignmentId], references: [id])
+  producerId           String
+  producer             Producer          @relation(fields: [producerId], references: [id])
+  associationId        String?
+  association          Association?      @relation(fields: [associationId], references: [id])
+  zoneId               String
+  zone                 Zone              @relation(fields: [zoneId], references: [id])
+  collectionPointId    String
+  collectionPoint      CollectionPoint   @relation(fields: [collectionPointId], references: [id])
+  productId            String
+  product              Product           @relation(fields: [productId], references: [id])
+  farmName             String
+  municipality         String
+  harvestDate          DateTime
+  weighedAt            DateTime          @default(now())
+  requestedKg          Float
+  actualKg             Float
+  qualityResult        String            @default("APPROVED_STANDARD") // APPROVED_STANDARD | RECLASSIFIED_FUNCTIONAL | REJECTED
+  rejectionReason      String?
+  weigherUserId        String?
+  producerSignatureAck Boolean           @default(true)
+  routeId              String?
+  route                Route?            @relation(fields: [routeId], references: [id])
+  weeklyOrderId        String?
+  weeklyOrder          WeeklyOrder?      @relation(fields: [weeklyOrderId], references: [id])
+  offlineSyncId        String?           @unique
+  captureChannel       String            @default("ACOPIO_TABLET")
+  createdAt            DateTime          @default(now())
+
+  incidents            Incident[]
+}
+
+model Route {
+  id                    String      @id @default(cuid())
+  routeCode             String      @unique
+  routeDate             DateTime
+  deliveryWeek          String
+  transporterId         String
+  transporter           Transporter @relation(fields: [transporterId], references: [id])
+  status                String      @default("PLANNED") // PLANNED | OFFERED | ACCEPTED | IN_PROGRESS | COMPLETED | CANCELLED
+  totalKg               Float
+  vehicleUtilizationPct Float
+  estimatedKm           Float
+  detourKm              Float       @default(0)
+  agreedTariffCop       Int
+  waitingMinutesTotal   Int         @default(0)
+  waitingCompCop        Int         @default(0)
+  cancellationCompCop   Int         @default(0)
+  grossCommissionRevCop Int         @default(0)
+  proratedSubRevCop     Int         @default(0)
+  backupOvercostCop     Int         @default(0)
+  contributionMarginCop Int         @default(0)
+  marginPerKgCop        Float       @default(0)
+  tariffModelUsed       String      @default("BASE_PLUS_KM")
+  notes                 String?
+  acceptedAt            DateTime?
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime    @default(now())
+
+  stops                 RouteStop[]
+  lots                  Lot[]
+  deliveryReceipts      DeliveryReceipt[]
+  incidents             Incident[]
+}
+
+model RouteStop {
+  id            String    @id @default(cuid())
+  routeId       String
+  route         Route     @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  stopOrder     Int
+  stopType      String    // PICKUP_ACOPIO | DELIVERY_BUYER | BACKUP_CORABASTOS
+  refId         String
+  label         String
+  address       String
+  lat           Float
+  lng           Float
+  scheduledTime String
+  arrivedAt     DateTime?
+  departedAt    DateTime?
+  waitMinutes   Int       @default(0)
+  kgAmount      Float
+  status        String    @default("PENDING") // PENDING | ARRIVED | COMPLETED | SKIPPED
+}
+
+model DeliveryReceipt {
+  id             String      @id @default(cuid())
+  weeklyOrderId  String      @unique
+  weeklyOrder    WeeklyOrder @relation(fields: [weeklyOrderId], references: [id], onDelete: Cascade)
+  routeId        String?
+  route          Route?      @relation(fields: [routeId], references: [id])
+  receivedAt     DateTime    @default(now())
+  otifOnTime     Boolean     @default(true)
+  otifInFull     Boolean     @default(true)
+  wasteMermaKg   Float       @default(0)
+  wasteMermaPct  Float       @default(0)
+  receivedByName String
+  notes          String?
+  captureChannel String      @default("WEB")
+}
+
+model Incident {
+  id                  String          @id @default(cuid())
+  incidentCode        String          @unique
+  weeklyOrderId       String?
+  weeklyOrder         WeeklyOrder?    @relation(fields: [weeklyOrderId], references: [id])
+  buyerOrgId          String?
+  buyerOrg            BuyerOrg?       @relation(fields: [buyerOrgId], references: [id])
+  orderItemId         String?
+  orderItem           OrderItem?      @relation(fields: [orderItemId], references: [id])
+  lotId               String?
+  lot                 Lot?            @relation(fields: [lotId], references: [id])
+  routeId             String?
+  route               Route?          @relation(fields: [routeId], references: [id])
+  producerId          String?
+  producer            Producer?       @relation(fields: [producerId], references: [id])
+  zoneId              String?
+  zone                Zone?           @relation(fields: [zoneId], references: [id])
+  productId           String
+  product             Product         @relation("IncidentProduct", fields: [productId], references: [id])
+  deliveryWeek        String
+  rootCause           String          // CLIMATE_CERTIFIED | QUALITY_REJECTED_ACOPIO | DIVERTED_SIDE_SELLING | ROUTE_FAILURE | DEMAND_CHANGE
+  affectedKg          Float
+  description         String
+  resolutionType      String          @default("PENDING") // PREAGREED_SUBSTITUTE | CORABASTOS_BACKUP | SECOND_ZONE_REALLOCATION | CREDIT_NOTE | PENDING
+  substituteProductId String?
+  substituteProduct   Product?        @relation("IncidentSubstitute", fields: [substituteProductId], references: [id])
+  slaResponseMinutes  Int?
+  status              String          @default("OPEN") // OPEN | IN_PROGRESS | RESOLVED
+  createdAt           DateTime        @default(now())
+  resolvedAt          DateTime?
+
+  backupPurchase      BackupPurchase?
+}
+
+model BackupPurchase {
+  id                  String   @id @default(cuid())
+  incidentId          String   @unique
+  incident            Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  corabastosVendor    String
+  productId           String
+  product             Product  @relation(fields: [productId], references: [id])
+  kg                  Float
+  marketPriceCop      Int
+  agreedPriceCop      Int
+  totalOvercostCop    Int
+  overcostCapCop      Int      @default(120000)
+  platformAbsorbedCop Int
+  purchasedAt         DateTime @default(now())
+}
+
+model Settlement {
+  id               String    @id @default(cuid())
+  settlementCode   String    @unique
+  counterpartyType String    // BUYER | PRODUCER | TRANSPORTER
+  counterpartyId   String
+  counterpartyName String
+  referenceType    String    // WEEKLY_ORDER | HARVEST_ASSIGNMENT | ROUTE
+  referenceId      String
+  deliveryWeek     String
+  grossAmountCop   Int
+  commissionCop    Int       @default(0)
+  subscriptionCop  Int       @default(0)
+  netAmountCop     Int
+  dueDate          DateTime
+  paidAt           DateTime?
+  paymentMethod    String    @default("TRANSFERENCIA") // TRANSFERENCIA | NEQUI | PSE | EFECTIVO_ACOPIO
+  status           String    @default("PENDING") // PENDING | SCHEDULED | PAID | DISPUTED
+  createdAt        DateTime  @default(now())
+}
+
+model ExternalMarketFeed {
+  id                  String   @id @default(cuid())
+  productId           String
+  product             Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  recordedDate        DateTime
+  sipsaPriceCop       Int
+  corabastosMinCop    Int
+  corabastosMaxCop    Int
+  ipcFoodVariationPct Float    @default(7.31)
+  source              String   @default("DANE-SIPSA")
+}
+
+model WeatherAlert {
+  id           String   @id @default(cuid())
+  zoneId       String
+  zone         Zone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  municipality String
+  alertType    String   // GRANIZADA | HELADA | LLUVIA_EXTREMA | SEQUIA | NORMAL
+  severity     String   // LOW | MEDIUM | HIGH
+  description  String
+  validFrom    DateTime
+  validUntil   DateTime
+  source       String   @default("IDEAM")
+  isActive     Boolean  @default(true)
+}

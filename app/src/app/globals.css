@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --rf-green: #3A9D4A;
+  --rf-green-dark: #2E7D3B;
+  --rf-green-soft: #E8F5EA;
+  --rf-graphite: #263238;
+  --rf-yellow: #F4B400;
+  --rf-yellow-soft: #FFF8E1;
+  --rf-bg: #F2F5F0;
+}
+
+body {
+  background-color: var(--rf-bg);
+  color: var(--rf-graphite);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.rf-dotted-route {
+  background-image: radial-gradient(circle, #F4B400 2px, transparent 2.5px);
+  background-size: 10px 4px;
+  background-repeat: repeat-x;
+  height: 4px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+}
